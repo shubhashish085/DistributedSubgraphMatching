@@ -1,0 +1,11 @@
+# Undirected graph: ../../data/output/lj.ungraph.txt
+# LiveJournal
+# Nodes: 5 Edges: 7
+# FromNodeId	ToNodeId
+0 1
+0 3
+0 4
+1 2
+2 0
+2 3
+2 4

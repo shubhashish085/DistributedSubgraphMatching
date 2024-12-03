@@ -5,6 +5,9 @@
 #include <sys/stat.h>
 #include <algorithm>
 
+#define WORKTAG 1
+#define DIETAG 0
+
 typedef int index_t;
 typedef int vertex_t;
 typedef double path_t;

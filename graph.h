@@ -66,7 +66,9 @@ public:
     void loadGraphFromFile(const std::string& file_path);
     void loadGraphFromFileWithEdge(const std::string& file_path);
     void loadGraphFromFileWithoutStringConversion(const std::string& file_path);
+    void loadGraphFromFileForWeakScaling(const std::string& file_path, ui division_factor);
     void loadGraphFromFileWithWeight(const std::string& file_path);
+    void loadDirectedGraphFromFile(const std::string& file_path);
     void printGraphMetaData();
     void setMatchingOrderIndex(std::vector<ui> matching_order);
 
