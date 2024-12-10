@@ -84,11 +84,16 @@ int main(int argc, char** argv) {
     data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
     data_graph->printGraphMetaData();
 
+    double start_time = wtime();
+
     MPI_Init(NULL, NULL);
 
     analyseParallelization(query_graph, data_graph, output_performance_file);
 
     MPI_Finalize();
+
+    double end_time = wtime();
+    std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
 }
 
