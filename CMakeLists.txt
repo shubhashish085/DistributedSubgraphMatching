@@ -25,6 +25,8 @@ set(DISTRIBUTED_SUBGRAPH_MATCHING_FILE_LIST
         Enumeration.cpp
         ParallelEnumeration.h
         ParallelEnumeration.cpp
+        LoadBalancer.h
+        LoadBalancer.cpp
         graph.cpp
         graph.h
         utilities.cpp

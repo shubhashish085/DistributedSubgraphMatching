@@ -6,11 +6,45 @@
 #include "GeneratingFilterPlan.h"
 #include "Enumeration.h"
 #include "ParallelEnumeration.h"
+#include "LoadBalancer.h"
 #include "wtime.h"
 #include <chrono>
 #include <limits>
 #include <fstream>
 #include <mpi.h>
+
+
+void analyseWorkEstimation(Graph* query_graph, Graph* data_graph){
+
+    ui* matching_order = NULL;
+    TreeNode* query_tree = NULL;
+    ui** candidates = NULL;
+    ui* candidates_count = NULL;
+    size_t call_count = 0;
+    size_t output_limit = std::numeric_limits<size_t>::max();
+    size_t  embedding_count = 0;
+    ui* vertex_participating_in_embedding = new ui[data_graph -> getVerticesCount()];
+    ui process_count = 2;
+
+    std::cout << "Started Filtering " << std::endl;
+
+    FilterVertices::CFLFilter(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    VertexID start_vertex = matching_order[0];
+
+    std::cout << "Start Vertex : " << start_vertex << std::endl;
+
+    size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    size_t total_workload = 0;
+
+    for(ui i = 0; i < candidates_count[0]; i++){
+        total_workload += est_work_array[i];
+    }
+
+    std::cout << "Total Estimated Workload : " << total_workload << std::endl;
+
+}
 
 
 void analyseParallelization(Graph* query_graph, Graph* data_graph, const std::string& output_file_path){
@@ -26,14 +60,6 @@ void analyseParallelization(Graph* query_graph, Graph* data_graph, const std::st
     ui process_count = 2;
 
     FilterVertices::CFLFilter(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
-
-    std::cout << "####### Candidate count  : " ;
-
-    for(ui i = 0; i < query_graph -> getVerticesCount(); i++){
-        std::cout << candidates_count[i] << " " ;
-    }
-
-    std::cout << std::endl;
 
     VertexID start_vertex = matching_order[0];
 
@@ -66,7 +92,10 @@ void analyseParallelization(Graph* query_graph, Graph* data_graph, const std::st
 
 }
 
-int main(int argc, char** argv) {
+
+
+//Final Run
+/*int main(int argc, char** argv) {
 
     MatchingCommand command(argc, argv);
     std::string input_query_graph_file = command.getQueryGraphFilePath();
@@ -95,6 +124,39 @@ int main(int argc, char** argv) {
     double end_time = wtime();
     std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
-}
+}*/
 
+
+//Test Run
+int main(int argc, char** argv) {
+
+    MatchingCommand command(argc, argv);
+    std::string input_query_graph_file = command.getQueryGraphFilePath();
+    std::string input_data_graph_file = command.getDataGraphFilePath();
+    std::string output_performance_file = command.getOutputFilePath();
+
+
+    std::cout << " Query Graph : " << input_query_graph_file << std::endl;
+    Graph* query_graph = new Graph();
+    query_graph->loadGraphFromFile(input_query_graph_file);
+    query_graph->printGraphMetaData();
+
+    std::cout << " Data Graph : " << input_data_graph_file << std::endl;
+    Graph* data_graph = new Graph();
+    data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
+    data_graph->printGraphMetaData();
+
+    double start_time = wtime();
+
+    MPI_Init(NULL, NULL);
+
+    analyseWorkEstimation(query_graph, data_graph);
+
+    MPI_Finalize();
+
+    double end_time = wtime();
+
+    std::cout << "The time taken is : " << end_time - start_time << std::endl;
+
+}
 
