@@ -8,6 +8,43 @@
 #include <sstream>
 
 
+void Graph::BuildLabelOffset() {
+    size_t labels_offset_size = (size_t)vertices_count * labels_count + 1;
+    labels_offsets = new ui[labels_offset_size]; // used for storing 
+    std::fill(labels_offsets, labels_offsets + labels_offset_size, 0);
+
+    for (ui i = 0; i < vertices_count; ++i) {
+        std::sort(neighbors + offsets[i], neighbors + offsets[i + 1],
+            [this](const VertexID u, const VertexID v) -> bool {
+                return labels[u] == labels[v] ? u < v : labels[u] < labels[v];
+            });
+    }
+
+    for (ui i = 0; i < vertices_count; ++i) {
+        LabelID previous_label = 0;
+        LabelID current_label = 0;
+
+        labels_offset_size = i * labels_count;
+        labels_offsets[labels_offset_size] = offsets[i];
+
+        for (ui j = offsets[i]; j < offsets[i + 1]; ++j) {
+            current_label = labels[neighbors[j]];
+
+            if (current_label != previous_label) {
+                for (ui k = previous_label + 1; k <= current_label; ++k) {
+                    labels_offsets[labels_offset_size + k] = j;
+                }
+                previous_label = current_label;
+            }
+        }
+
+        for (ui l = current_label + 1; l <= labels_count; ++l) {
+            labels_offsets[labels_offset_size + l] = offsets[i + 1];
+        }
+    }
+}
+
+
 void Graph::BuildReverseIndex() {
     reverse_index = new ui[vertices_count];
     reverse_index_offsets= new ui[labels_count + 1];
@@ -205,7 +242,7 @@ void Graph::loadGraphFromFileWithEdge(const std::string& file_path){
     }
 
     BuildReverseIndex();
-
+    BuildLabelOffset();
     //printGraphData();
 }
 
@@ -375,7 +412,7 @@ void Graph::loadGraphFromFileWithWeight(const std::string& file_path){
     }
 
     BuildReverseIndex();
-
+    BuildLabelOffset();
     //printGraphData();
 }
 
@@ -546,7 +583,7 @@ void Graph::loadGraphFromFileWithoutStringConversion(const std::string& file_pat
     }
 
     BuildReverseIndex();
-
+    BuildLabelOffset();
     //printGraphData();
 }
 
@@ -720,7 +757,7 @@ void Graph::loadGraphFromFileForWeakScaling(const std::string& file_path, ui div
     }
 
     BuildReverseIndex();
-
+    BuildLabelOffset();
     //printGraphData();
 }
 
@@ -814,6 +851,7 @@ void Graph::loadGraphFromFile(const std::string &file_path) {
     }
 
     BuildReverseIndex();
+    BuildLabelOffset();
 
 }
 
@@ -990,6 +1028,7 @@ void Graph::loadDirectedGraphFromFile(const std::string& file_path){
     }
 
     BuildReverseIndex();
+    BuildLabelOffset();
 
     //printGraphData();
 }

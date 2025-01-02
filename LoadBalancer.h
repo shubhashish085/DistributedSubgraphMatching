@@ -11,8 +11,8 @@ class LoadBalancer {
 public:
     static size_t* workloadEstimator(const Graph *data_graph, const Graph *query_graph, ui **candidates, ui *candidates_count, ui *order,
                                                         TreeNode *& tree_node);
-    static size_t calculateWorkLoad(const Graph *data_graph, const Graph *query_graph, ui **candidates, ui *candidates_count, ui *order,
-                                                        TreeNode *& tree_node, ui curr_idx, size_t& workload);
+    static size_t calculateWorkLoad(const Graph *data_graph, const Graph *query_graph, ui max_valid_nbr_cnt, ui *order,
+                                                        TreeNode *& tree_node, ui curr_idx, VertexID data_vtx, size_t workload);
 
 };
 

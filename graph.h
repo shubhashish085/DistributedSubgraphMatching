@@ -14,6 +14,7 @@ private:
     ui edges_count;
     ui labels_count;
     ui max_degree;
+    
     ui max_label_frequency;
 
     ui* degrees;
@@ -75,6 +76,7 @@ public:
 public:
 
     void BuildReverseIndex();
+    void BuildLabelOffset();
 
     const ui* getOffsets() const {
         return offsets;
@@ -95,6 +97,7 @@ public:
     const ui getVertexDegree(const VertexID id) const {
         return offsets[id + 1] - offsets[id];
     }
+
 
     const ui getGraphMaxDegree() const {
         return max_degree;
@@ -118,6 +121,7 @@ public:
     }
 
     const ui * getNeighborsByLabel(const VertexID id, const LabelID label, ui& count) const {
+
         ui offset = id * labels_count + label;
         count = labels_offsets[offset + 1] - labels_offsets[offset];
         return neighbors + labels_offsets[offset];
