@@ -34,7 +34,7 @@ size_t LoadBalancer::calculateWorkLoad(const Graph *data_graph, const Graph *que
             //workload += valid_nbr_cnt;
 
             for(ui k = 0; k < valid_nbr_cnt; k++){
-                workload += calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, child_id, valid_nbrs[k], workload);
+                workload *= calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, child_id, valid_nbrs[k], workload);
             }
 
             delete[] valid_nbrs;
@@ -66,9 +66,9 @@ size_t* LoadBalancer::workloadEstimator(const Graph *data_graph, const Graph *qu
             
             est_workload_array[i] = calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, 0, candidates[0][i], workload);
 
-            if(i % 1000 == 0){
-                std::cout << "Done for : " << i << std::endl;
-            }
+            // if(i % 1000 == 0){
+            //     std::cout << "Done for : " << i << std::endl;
+            // }
             
         }                                                   
 
