@@ -1,6 +1,8 @@
 
+#include <fstream>
 #include "types.h"
 #include "LoadBalancer.h"
+
 
 
 size_t LoadBalancer::calculateWorkLoad(const Graph *data_graph, const Graph *query_graph, ui max_valid_nbr_cnt, ui *order,
@@ -75,4 +77,19 @@ size_t* LoadBalancer::workloadEstimator(const Graph *data_graph, const Graph *qu
 
         return est_workload_array;
 
+}
+
+
+void LoadBalancer::writeInCsvFile(int size, int rank, size_t* work_est_array, size_t* org_cnt_array, ui array_length, ui work_est_idx, ui org_cnt_idx){
+
+    std::ofstream outfile;
+    outfile.open ("comparison_result/P" + std::to_string(size) + "amazon_" + std::to_string(rank) + "_comparison.csv");
+    outfile << "Estimated_Count,Real_Count," << std::endl;
+
+    for(ui i = 0; i < array_length; i++){
+
+        outfile << work_est_array[work_est_idx + i] << "," << org_cnt_array[org_cnt_idx + i] << "," << std::endl;
+
+    }
+    outfile.close();
 }

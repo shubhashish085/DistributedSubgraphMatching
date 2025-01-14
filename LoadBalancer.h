@@ -13,6 +13,7 @@ public:
                                                         TreeNode *& tree_node);
     static size_t calculateWorkLoad(const Graph *data_graph, const Graph *query_graph, ui max_valid_nbr_cnt, ui *order,
                                                         TreeNode *& tree_node, ui curr_idx, VertexID data_vtx, size_t workload);
+    static void writeInCsvFile(int size, int rank, size_t* work_est_array, size_t* org_cnt_array, ui array_length, ui work_est_idx, ui org_cnt_idx);
 
 };
 

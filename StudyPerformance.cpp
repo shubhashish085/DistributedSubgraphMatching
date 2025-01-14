@@ -92,6 +92,45 @@ void analyseParallelization(Graph* query_graph, Graph* data_graph, const std::st
 
 }
 
+
+void compareBetweenEstimationAndRealCount(Graph* query_graph, Graph* data_graph, const std::string& output_file_path){
+
+    int world_rank; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    ui* matching_order = NULL;
+    TreeNode* query_tree = NULL;
+    ui** candidates = NULL;
+    ui* candidates_count = NULL;
+    ui* candidate_limit = NULL;
+    size_t call_count = 0;
+    size_t output_limit = std::numeric_limits<size_t>::max();
+    size_t  embedding_count = 0;
+    ui* vertex_participating_in_embedding = new ui[data_graph -> getVerticesCount()];
+    ui process_count = 2;
+
+    FilterVertices::CFLFilter(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    VertexID start_vertex = matching_order[0];    
+
+    size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    //Parallel Strategy
+    double start_time, end_time;
+
+    
+    embedding_count = 0;
+    call_count = 0;
+
+    start_time = wtime();
+    ParallelEnumeration::compareBetweenEstimationAndRealCount(data_graph, query_graph, candidates,
+                                                                              candidates_count, matching_order, query_tree, est_work_array, output_limit, call_count);
+    end_time = wtime();
+
+    std::cout << "Process : " << world_rank << " - Time " << end_time - start_time << std::endl;
+}
+
+
 void analyseParallelizationWithEvenWorkloadEstimation(Graph* query_graph, Graph* data_graph, const std::string& output_file_path){
 
     ui* matching_order = NULL;
@@ -133,7 +172,7 @@ void analyseParallelizationWithEvenWorkloadEstimation(Graph* query_graph, Graph*
 
 
 //Final Run
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
 
     MatchingCommand command(argc, argv);
     std::string input_query_graph_file = command.getQueryGraphFilePath();
@@ -162,11 +201,11 @@ int main(int argc, char** argv) {
     double end_time = wtime();
     std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
-}
+}*/
 
 
 //Test Run
-/*int main(int argc, char** argv) {
+int main(int argc, char** argv) {
 
     MatchingCommand command(argc, argv);
     std::string input_query_graph_file = command.getQueryGraphFilePath();
@@ -188,13 +227,12 @@ int main(int argc, char** argv) {
 
     MPI_Init(NULL, NULL);
 
-    analyseWorkEstimation(query_graph, data_graph);
+    compareBetweenEstimationAndRealCount(query_graph, data_graph, output_performance_file);
 
     MPI_Finalize();
 
     double end_time = wtime();
-
     std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
-}*/
+}
 
