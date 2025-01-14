@@ -708,6 +708,7 @@ void ParallelEnumeration::compareBetweenEstimationAndRealCount(const Graph *data
                 if (cur_depth == max_depth - 1)
                 {
                     embedding_cnt_array[world_rank] += 1;
+                    embedding_cnt_from_start_vertex += 1;
                     visited_vertices[v] = false;
                     if (embedding_cnt_array[world_rank] >= thread_output_limit_num)
                     {
@@ -791,6 +792,7 @@ void ParallelEnumeration::compareBetweenEstimationAndRealCount(const Graph *data
                 if (cur_depth == max_depth - 1)
                 {
                     process_embedding_count += 1;
+                    embedding_cnt_from_start_vertex += 1;
                     visited_vertices[v] = false;
                     if (process_embedding_count >= thread_output_limit_num)
                     {

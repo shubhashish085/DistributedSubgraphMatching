@@ -114,7 +114,6 @@ void compareBetweenEstimationAndRealCount(Graph* query_graph, Graph* data_graph,
     VertexID start_vertex = matching_order[0];    
 
     size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
-
     //Parallel Strategy
     double start_time, end_time;
 

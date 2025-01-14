@@ -36,7 +36,7 @@ size_t LoadBalancer::calculateWorkLoad(const Graph *data_graph, const Graph *que
             //workload += valid_nbr_cnt;
 
             for(ui k = 0; k < valid_nbr_cnt; k++){
-                workload *= calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, child_id, valid_nbrs[k], workload);
+                workload += calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, child_id, valid_nbrs[k], workload);
             }
 
             delete[] valid_nbrs;
@@ -64,7 +64,7 @@ size_t* LoadBalancer::workloadEstimator(const Graph *data_graph, const Graph *qu
 
         for(ui i = 0; i < candidates_count[0]; i++){
 
-            size_t workload = 0;
+            size_t workload = 1;
             
             est_workload_array[i] = calculateWorkLoad(data_graph, query_graph, max_valid_nbr_cnt, order, tree_node, 0, candidates[0][i], workload);
 
@@ -88,7 +88,7 @@ void LoadBalancer::writeInCsvFile(int size, int rank, size_t* work_est_array, si
 
     for(ui i = 0; i < array_length; i++){
 
-        outfile << work_est_array[work_est_idx + i] << "," << org_cnt_array[org_cnt_idx + i] << "," << std::endl;
+        outfile << work_est_array[work_est_idx + i] << "," << org_cnt_array[org_cnt_idx + i]  << std::endl;
 
     }
     outfile.close();
