@@ -553,21 +553,22 @@ EXIT:
 }
 
 
-static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Graph *query_graph, ui **candidates, ui *candidates_count, ui *order,
+void ParallelEnumeration::exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Graph *query_graph, ui **candidates, ui *candidates_count, ui *order,
                                                        TreeNode *&tree, size_t* est_work_array, size_t thread_output_limit_num, size_t &call_count){
 
     std::cout << " ################## explore parallel ##################" << std::endl;
 
     
-    int world_size, world_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    int world_size, world_rank, world_process_cnt;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_process_cnt);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     size_t *embedding_cnt_array = new size_t[2 * world_size];
 
+    world_size = world_process_cnt - 1;
     
     double *thread_wise_time = new double[world_size];
 
-    for (ui i = 0; i < world_size; i++)
+    for (ui i = 0; i < 2 * world_size; i++)
     {
         embedding_cnt_array[i] = 0;
     }
@@ -642,7 +643,7 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
         cand_workload_offset[0] = 0;
         ui *candidate_limit = new ui[2 * world_size + 1];
         bool *work_track_array = new bool[2 * world_size];
-        ui *assigned_task = new ui[world_size];
+        ui *assigned_task = new ui[world_process_cnt];
         ui *my_work = new ui[2];
 
         for (ui j = 1; j < candidates_count[start_vertex] + 1; j++){
@@ -662,7 +663,7 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
 
         for (ui j = 1; j < candidates_count[start_vertex] + 1; j++)
         {
-            if (process_idx == (2 * world_size - 1)){
+            if (process_idx == (2 * world_size)){
                 candidate_limit[process_idx++] = candidates_count[start_vertex];
                 last_thread_workload_offset = cand_workload_offset[candidates_count[start_vertex]];
                 break;
@@ -675,9 +676,14 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
             }
         }
 
-        for (int i = 1; i < world_size; ++i)
+        for (ui i = 0; i <= (2 * world_size); i++){
+            std::cout << "Candidate Limit " << i << " : " << candidate_limit[i] << std::endl;
+        }
+
+        for (int i = 1; i < world_process_cnt; ++i)
         {
             MPI_Send(candidate_limit, (2 * world_size + 1), MPI_UNSIGNED, i, WORKTAG, MPI_COMM_WORLD);
+            std::cout << "Sent To Process : " << i << std::endl;
             work_track_array[work_track_cnt++] = true;
             assigned_task[i] = i - 1;
         }
@@ -686,31 +692,34 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
         MPI_Status status;
         ui process_embedding_count = 0;
         
-        for (;;){
+        for (ui i = 0; i < 2 * world_size; i++){
             MPI_Recv(&process_embedding_count, 1, MPI_UNSIGNED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+            std::cout << "Process Embedding Count : " << process_embedding_count << std::endl;
 
             rank = status.MPI_SOURCE;
             embedding_cnt_array[assigned_task[rank]] = process_embedding_count;
 
-            if(work_track_cnt < (2 * world_size)){
-                my_work[0] = work_track_cnt;
-                my_work[1] = work_track_cnt + 1;
+            std::cout << "Received in Process : 0 from Process : " << rank << " task : " << assigned_task[rank] << std::endl;
 
-                MPI_Send(my_work, 2, MPI_UNSIGNED, rank, WORKTAG, MPI_COMM_WORLD);
+            
+            my_work[0] = work_track_cnt;
+            my_work[1] = work_track_cnt + 1;
+
+            MPI_Send(my_work, 2, MPI_UNSIGNED, rank, WORKTAG, MPI_COMM_WORLD);
                 
-                work_track_array[assigned_task[rank]] = true;
-                assigned_task[rank] = work_track_cnt;
-                work_track_cnt++;
-            }else{
-                my_work[0] = 0;
-                my_work[1] = 0;
+            work_track_array[assigned_task[rank]] = true;
+            assigned_task[rank] = work_track_cnt;
+            std::cout << "Sent To Process : " << rank  << " task : "  << assigned_task[rank] << std::endl;
+            work_track_cnt++;
+            
+        }
 
-                for(int i = 1; i < world_size; ++i){
-                    MPI_Send(my_work, 2, MPI_INT, i, DIETAG, MPI_COMM_WORLD);
-                }
+        my_work[0] = 0;
+        my_work[1] = 0;
 
-                break;
-            }
+        for(int i = 1; i < world_process_cnt; ++i){
+            MPI_Send(my_work, 2, MPI_INT, i, DIETAG, MPI_COMM_WORLD);
         }
 
         size_t final_embedding_count = 0;
@@ -724,6 +733,8 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
         MPI_Status status;
         ui *candidate_limit = new ui[(2 * world_size + 1)];
         MPI_Recv(candidate_limit, (2 * world_size + 1), MPI_UNSIGNED, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+        std::cout << "Received in Process : " << world_rank << " from Process : 0" << std::endl;
 
         double start_time = wtime();
 
@@ -749,19 +760,24 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
 
                 if(status.MPI_TAG == DIETAG){
 				    goto EXIT;
-			    }
+			    }                
 
-                start_idx = my_work[0];
-                end_idx = my_work[1];
+                start_idx = candidate_limit[my_work[0]];
+                end_idx = candidate_limit[my_work[1]];
+                std::cout << "Received in Process : " << world_rank << " from Process : 0 Receiver Count : " << work_recv_count << std::endl;
+
                 idx[cur_depth] = 0;
                 idx_count[cur_depth] = end_idx - start_idx;
                 std::copy(candidates[start_vertex] + start_idx, candidates[start_vertex] + end_idx, valid_candidate[cur_depth]);
 
 
             }else {
-                MPI_Recv(my_work, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                
                 start_idx = candidate_limit[world_rank - 1];
                 end_idx = candidate_limit[world_rank];
+
+                std::cout << "Received in Process : " << world_rank << " from Process : 0 Receiver Count : " << work_recv_count << std::endl;
+
                 idx[cur_depth] = 0;
                 idx_count[cur_depth] =  end_idx - start_idx;
                 std::copy(candidates[start_vertex] + start_idx, candidates[start_vertex] + end_idx, valid_candidate[cur_depth]);
@@ -804,6 +820,7 @@ static void exploreWithPullBasedLoadBalancing(const Graph *data_graph, const Gra
 
             work_recv_count++;
             MPI_Send(&process_embedding_count, 1, MPI_UNSIGNED, 0, WORKTAG, MPI_COMM_WORLD);
+            std::cout << "Sent to Process : 0 from Process : " << world_rank << std::endl;
         }        
     }
 
