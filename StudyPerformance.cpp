@@ -204,6 +204,41 @@ void analyseParallelizationWithPullBasedLoadBalancing(Graph* query_graph, Graph*
 }
 
 
+void analysePushBasedLoadBalancingWithNoWaiting(Graph* query_graph, Graph* data_graph, const std::string& output_file_path){
+
+    ui* matching_order = NULL;
+    TreeNode* query_tree = NULL;
+    ui** candidates = NULL;
+    ui* candidates_count = NULL;
+    ui* candidate_limit = NULL;
+    size_t call_count = 0;
+    size_t output_limit = std::numeric_limits<size_t>::max();
+    size_t  embedding_count = 0;
+    ui* vertex_participating_in_embedding = new ui[data_graph -> getVerticesCount()];
+    ui process_count = 2;
+
+    FilterVertices::CFLFilter(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    VertexID start_vertex = matching_order[0];    
+
+    size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    //Parallel Strategy
+    double start_time, end_time;
+
+    
+    embedding_count = 0;
+    call_count = 0;
+
+    start_time = wtime();
+    ParallelEnumeration::explorePushBasedLoadBalancingWithNoWaiting(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree, est_work_array, output_limit, call_count);
+
+    end_time = wtime();
+
+    std::cout << "Time " << end_time - start_time << std::endl;
+}
+
+
 //Final Run
 /*int main(int argc, char** argv) {
 
@@ -261,7 +296,8 @@ int main(int argc, char** argv) {
     MPI_Init(NULL, NULL);
 
     //compareBetweenEstimationAndRealCount(query_graph, data_graph, output_performance_file);
-    analyseParallelizationWithPullBasedLoadBalancing(query_graph, data_graph, output_performance_file);
+    //analyseParallelizationWithPullBasedLoadBalancing(query_graph, data_graph, output_performance_file);
+    analysePushBasedLoadBalancingWithNoWaiting(query_graph, data_graph, output_performance_file);
     MPI_Finalize();
 
     double end_time = wtime();
