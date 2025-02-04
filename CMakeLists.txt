@@ -11,6 +11,8 @@ set(CMAKE_CXX_FLAGS
 set(DISTRIBUTED_SUBGRAPH_MATCHING_FILE_LIST
         backtracking.cpp
         backtracking.h
+        Automorphism.h
+        Automorphism.cpp
         BuildTable.h
         BuildTable.cpp
         FilterVertices.h

@@ -283,6 +283,109 @@ void Enumerate::generateValidCandidatesWithSetIntersectionAndBoundary(const Grap
 /*
  * Generating Valid Candidates During Enumeration according to the previous vertex using Set intersection and two pointer
  * */
+void Enumerate::generateValidCandidatesBreakingAutomorphism(const Graph* data_graph, ui depth, ui* embedding, ui* idx_count, ui** valid_candidate,
+                                                                     bool* visited_vertices,TreeNode *&tree, ui* order, ui* candidate_offset, ui* candidate_csr,
+                                                                     VertexID* intersection_array, VertexID* intersection_order, 
+                                                                     std::map<ui, std::vector<std::pair<ui, ui>>>& schedule_restriction_map){
+
+    VertexID u = order[depth];
+    ui neighbor_count = 0;
+
+    ui set_ints_length = 0, l_length = 0, min_neighbor_count = INTMAX_MAX;
+
+    idx_count[depth] = 0;
+
+    std::map<ui, std::vector<std::pair<ui, ui>>>::iterator it = schedule_restriction_map.find(depth);
+    std::vector<std::pair<ui, ui>>::iterator vtr_itr = (it->second).begin();
+    ui minimum_value = 0;
+
+    while(vtr_itr != (it->second).end()){ 
+        minimum_value = std::max(embedding[vtr_itr->first], minimum_value);
+        ++vtr_itr; 
+    }
+
+    if(depth > 0){
+        minimum_value += 1;
+    }
+    
+
+    std::map<ui, ui> intersection_map;
+    std::map<ui, ui>::iterator search_result;
+
+    ui bn_count = tree[u].bn_count_;
+
+    for (ui i = 0; i < bn_count; i++){
+        intersection_order[i] = embedding[tree[u].bn_[i]];
+    }
+
+    for (ui i = 0; i < bn_count; i++){
+        data_graph ->getNeighborCount(intersection_order[i], neighbor_count);
+        if (neighbor_count < min_neighbor_count){
+            ui temp = intersection_order[i];
+            intersection_order[i] = intersection_order[0];
+            intersection_order[0] = temp;
+            min_neighbor_count = neighbor_count;
+        }
+    }
+
+    for (ui i = 0; i < bn_count; i++){
+
+        VertexID* neighbors = data_graph ->getVertexNeighbors(intersection_order[i], neighbor_count);
+
+        for(ui i = 0; i < neighbor_count - 1; i++){
+            if(neighbors[i] > neighbors[i + 1]){
+                std::cout << "Neighbor Array is not Sorted " << std::endl;
+                break;
+            }
+        }
+
+        if(i == 0){
+            std::copy(neighbors, neighbors + neighbor_count, intersection_array);
+            set_ints_length = neighbor_count;
+            l_length = set_ints_length;
+        }else{
+            Utilities::set_intersection_tp(intersection_array, l_length, neighbors, neighbor_count, set_ints_length);
+            l_length = set_ints_length;
+        }
+    }
+
+    ui minimum_idx = 0;
+
+    /*for(ui i = 0; i < set_ints_length; i++){
+        if(intersection_array[i] >= minimum_value){
+            minimum_idx = i;
+            break;
+        }
+    }*/
+
+    // for(ui i = 0; i < set_ints_length - 1; i++){
+    //     if(intersection_array[i] > intersection_array[i + 1]){
+    //         std::cout << "Intersection Array is not Sorted " << std::endl;
+    //         break;
+    //     }
+    // }
+
+    for(ui i = minimum_idx; i < set_ints_length; i++){
+        VertexID v = intersection_array[i];
+        if(!visited_vertices[v] && v >= minimum_value) {
+            for (ui index = candidate_offset[v]; index < candidate_offset[v + 1]; index++) {
+                if (candidate_csr[index] == u) {
+                    valid_candidate[depth][idx_count[depth]++] = v;
+                    break;
+                }
+            }
+        }
+    }
+
+    /*if(idx_count[depth] > 0){
+        std::cout << "Minimum Value : " << minimum_value << " and then : " << valid_candidate[depth][0]<<std::endl;
+    }*/
+}
+
+
+/*
+ * Generating Valid Candidates During Enumeration according to the previous vertex using Set intersection and two pointer
+ * */
 void Enumerate::generateValidCandidatesWithSetIntersectionByOrdering(const Graph* data_graph, ui depth, ui* embedding, ui* idx_count, ui** valid_candidate,
                                                                      bool* visited_vertices,TreeNode *&tree, ui* order, ui* candidate_offset, ui* candidate_csr,
                                                                      VertexID* intersection_array, VertexID* intersection_order){
