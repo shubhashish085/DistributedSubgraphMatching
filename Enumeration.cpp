@@ -332,12 +332,12 @@ void Enumerate::generateValidCandidatesBreakingAutomorphism(const Graph* data_gr
 
         VertexID* neighbors = data_graph ->getVertexNeighbors(intersection_order[i], neighbor_count);
 
-        for(ui i = 0; i < neighbor_count - 1; i++){
-            if(neighbors[i] > neighbors[i + 1]){
-                std::cout << "Neighbor Array is not Sorted " << std::endl;
-                break;
-            }
-        }
+        // for(ui i = 0; i < neighbor_count - 1; i++){
+        //     if(neighbors[i] > neighbors[i + 1]){
+        //         std::cout << "Neighbor Array is not Sorted " << std::endl;
+        //         break;
+        //     }
+        // }
 
         if(i == 0){
             std::copy(neighbors, neighbors + neighbor_count, intersection_array);
