@@ -1639,8 +1639,7 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
             process_embedding_count += embedding_cnt_array[i];
         }
 
-        MPI_Send(&process_embedding_count, 1, MPI_UNSIGNED, 0, WORKTAG, MPI_COMM_WORLD);
-       
+        MPI_Send(&process_embedding_count, 1, MPI_UNSIGNED, 0, WORKTAG, MPI_COMM_WORLD);       
     }
 
 }
