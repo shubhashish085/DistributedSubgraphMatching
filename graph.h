@@ -30,6 +30,10 @@ private:
     std::unordered_map<LabelID, ui> labels_frequency;
     ui* labels_offsets;
 
+    //partition
+    ui* idx_array;
+    std::unordered_map<VertexID, ui> vtx_map_after_partition; 
+
 public:
 
     Graph() {
@@ -72,6 +76,9 @@ public:
     void loadDirectedGraphFromFile(const std::string& file_path);
     void printGraphMetaData();
     void setMatchingOrderIndex(std::vector<ui> matching_order);
+
+    //partition
+    void loadGraphFromFileWithReindexing(const std::string& file_path);
 
 public:
 

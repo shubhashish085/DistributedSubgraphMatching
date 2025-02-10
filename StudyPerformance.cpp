@@ -301,8 +301,94 @@ void analyseAutomorphismBreak(Graph* query_graph, Graph* data_graph){
     std::cout << "Time " << end_time - start_time << std::endl;
 }
 
+void analyseHybridParallelization(Graph* query_graph, std::string data_graph_file){
 
 
+    int world_rank;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    std::string input_data_file = data_graph_file + "_" + std::to_string(world_rank);
+    Graph* data_graph = new Graph();
+    data_graph->loadGraphFromFileWithReindexing(input_data_file);
+    data_graph->printGraphMetaData();
+    
+    
+    std::vector< std::pair<ui, ui> > ordered_pairs;
+    std::map<ui, std::vector<std::pair<ui, ui>>> schedule_restriction_map; 
+    ui* matching_order = NULL;
+    TreeNode* query_tree = NULL;
+    ui** candidates = NULL;
+    ui* candidates_count = NULL;
+    ui* candidate_limit = NULL;
+    size_t call_count = 0;
+    size_t output_limit = std::numeric_limits<size_t>::max();
+    size_t  embedding_count = 0;
+    ui* vertex_participating_in_embedding = new ui[data_graph -> getVerticesCount()];
+    ui process_count = 2;
+
+    ui* adj_mat = Automorphism::convert_to_adj_mat(query_graph-> getVerticesCount(), query_graph->getOffsets(), query_graph ->getNeighbors());
+
+    FilterVertices::CFLFilter(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    VertexID start_vertex = matching_order[0];
+
+    Automorphism::aggressive_optimize(ordered_pairs, adj_mat, query_graph->getVerticesCount());
+    Automorphism::restriction_integration_with_scheduling(matching_order, query_graph->getVerticesCount(), ordered_pairs, schedule_restriction_map); 
+
+    print_schedule_restriction_map(schedule_restriction_map, query_graph->getVerticesCount());  
+
+    size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+
+    //Parallel Strategy
+    double start_time, end_time;
+
+    
+    embedding_count = 0;
+    call_count = 0;
+
+    start_time = wtime();
+    ParallelEnumeration::exploreGraphWithAutomorphismBreak(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree, est_work_array, output_limit, call_count, schedule_restriction_map);
+
+    end_time = wtime();
+
+    std::cout << "Time " << end_time - start_time << std::endl;
+
+}
+
+
+//Main
+// int main(int argc, char** argv) {
+
+//     MatchingCommand command(argc, argv);
+//     std::string input_query_graph_file = command.getQueryGraphFilePath();
+//     std::string input_data_graph_file = command.getDataGraphFilePath();
+//     std::string output_performance_file = command.getOutputFilePath();
+
+
+//     std::cout << " Query Graph : " << input_query_graph_file << std::endl;
+//     Graph* query_graph = new Graph();
+//     query_graph->loadGraphFromFile(input_query_graph_file);
+//     query_graph->printGraphMetaData();
+
+//     std::cout << " Data Graph : " << input_data_graph_file << std::endl;
+//     Graph* data_graph = new Graph();
+//     data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
+//     data_graph->printGraphMetaData();
+
+//     double start_time = wtime();
+
+//     MPI_Init(NULL, NULL);
+
+//     analyseAutomorphismBreak(query_graph, data_graph);
+//     MPI_Finalize();
+
+//     double end_time = wtime();
+//     std::cout << "The time taken is : " << end_time - start_time << std::endl;
+
+// }
+
+// Partition Run
 int main(int argc, char** argv) {
 
     MatchingCommand command(argc, argv);
@@ -316,23 +402,18 @@ int main(int argc, char** argv) {
     query_graph->loadGraphFromFile(input_query_graph_file);
     query_graph->printGraphMetaData();
 
-    std::cout << " Data Graph : " << input_data_graph_file << std::endl;
-    Graph* data_graph = new Graph();
-    data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
-    data_graph->printGraphMetaData();
 
     double start_time = wtime();
 
     MPI_Init(NULL, NULL);
 
-    analyseAutomorphismBreak(query_graph, data_graph);
+    analyseHybridParallelization(query_graph, input_data_graph_file);
     MPI_Finalize();
 
     double end_time = wtime();
     std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
 }
-
 
 //Final Run
 /*int main(int argc, char** argv) {
