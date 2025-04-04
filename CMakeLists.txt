@@ -5,6 +5,8 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/
 )
 
+find_package(MPI REQUIRED)
+
 set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -std=c++11 -fopenmp -O3 -g -Wall -march=native -pthread")
 
@@ -41,5 +43,5 @@ set(DISTRIBUTED_SUBGRAPH_MATCHING_FILE_LIST
 
 add_executable(SubgraphMatching.out ${DISTRIBUTED_SUBGRAPH_MATCHING_FILE_LIST})
 
-find_package(MPI REQUIRED)
-target_link_libraries(SubgraphMatching.out PUBLIC MPI::MPI_CXX)
+target_include_directories(SubgraphMatching.out PUBLIC ${MPI_CXX_INCLUDE_PATH})
+target_link_libraries(SubgraphMatching.out PUBLIC ${MPI_CXX_LIBRARIES})
