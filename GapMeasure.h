@@ -7,6 +7,7 @@ class GapMeasure {
 
 public:
     static long long measure_the_epsilon_gap(const Graph *data_graph);
+    static long long measure_the_beta_gap(const Graph *data_graph);
 };
 
 

@@ -397,7 +397,8 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 
 // }
 
-int main(int argc, char** argv) {
+//For Partitioned Graph
+/*int main(int argc, char** argv) {
 
     std::string prefix_file_name = "orkut";
     std::string input_data_graph_directory = "/home/kars1/Research_Projects/metis/";
@@ -442,7 +443,32 @@ int main(int argc, char** argv) {
 
     MPI_Finalize();    
 
+}*/
+
+
+//Vertex Reordering for the entire graph
+int main(int argc, char** argv) {
+
+    std::string input_data_graph_file = "/home/kars1/Parallel_computation/dataset/com-amazon.ungraph.txt";
+
+    
+    MPI_Init(NULL, NULL);
+
+    Graph* main_data_graph = new Graph();
+    main_data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
+    main_data_graph->printGraphMetaData();
+    long long gap_distance = 0;
+    epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getEdgesCount());
+
+    std::cout << "Graph : " << input_data_graph_file << std::endl;
+    std::cout << "Epsilon : " <<  epsilon << std::endl;           
+
+
+    MPI_Finalize();    
+
 }
+
+
 
 // Partition Run
 /*int main(int argc, char** argv) {
