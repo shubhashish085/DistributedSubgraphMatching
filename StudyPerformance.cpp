@@ -398,7 +398,7 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 // }
 
 //For Partitioned Graph
-/*int main(int argc, char** argv) {
+int main(int argc, char** argv) {
 
     std::string prefix_file_name = "orkut";
     std::string input_data_graph_directory = "/home/kars1/Research_Projects/metis/";
@@ -427,14 +427,14 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
             data_graph->loadGraphFromFileWithReindexing(filename);
             data_graph->printGraphMetaData();
 
-            gap_distance += GapMeasure::measure_the_epsilon_gap(data_graph);
+            gap_distance += GapMeasure::measure_the_beta_gap(data_graph);
         }
 
-        std::string filename = input_data_graph_directory + std::to_string(numberOfParts[i]) + "_" + prefix_file_name + "_partition" + ".graph";
-        std::cout << " Data Graph : " << filename << std::endl;
-        Graph* data_graph = new Graph();
-        gap_distance += data_graph->measureGapForPartitionedEdges(filename);
-        epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getEdgesCount());  
+        //std::string filename = input_data_graph_directory + std::to_string(numberOfParts[i]) + "_" + prefix_file_name + "_partition" + ".graph";
+        //std::cout << " Data Graph : " << filename << std::endl;
+        //Graph* data_graph = new Graph();
+        //gap_distance += data_graph->measureGapForPartitionedEdges(filename);
+        epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getVerticesCount());  
 
         std::cout << "Graph : " << numberOfParts[i] << prefix_file_name << std::endl;
         std::cout << "Epsilon : " <<  epsilon << std::endl;           
@@ -443,11 +443,11 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 
     MPI_Finalize();    
 
-}*/
+}
 
 
 //Vertex Reordering for the entire graph
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
 
     std::string input_data_graph_file = "/home/kars1/Parallel_computation/dataset/com-orkut.ungraph.txt";
 
@@ -466,7 +466,7 @@ int main(int argc, char** argv) {
 
     MPI_Finalize();    
 
-}
+}*/
 
 
 

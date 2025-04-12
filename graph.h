@@ -82,7 +82,6 @@ public:
 
     //partition
     void loadGraphFromFileWithReindexing(const std::string& file_path);
-    long long measureGapForPartitionedEdges(const std::string& file_path);
 
 public:
 
