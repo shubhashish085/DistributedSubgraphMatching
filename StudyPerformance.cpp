@@ -449,7 +449,7 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 //Vertex Reordering for the entire graph
 int main(int argc, char** argv) {
 
-    std::string input_data_graph_file = "/home/kars1/Parallel_computation/dataset/com-amazon.ungraph.txt";
+    std::string input_data_graph_file = "/home/kars1/Parallel_computation/dataset/com-orkut.ungraph.txt";
 
     
     MPI_Init(NULL, NULL);
@@ -457,11 +457,11 @@ int main(int argc, char** argv) {
     Graph* main_data_graph = new Graph();
     main_data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
     main_data_graph->printGraphMetaData();
-    long long gap_distance = 0;
-    epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getEdgesCount());
+    long long gap_distance = GapMeasure::measure_the_beta_gap(main_data_graph);
+    double epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getVerticesCount());
 
     std::cout << "Graph : " << input_data_graph_file << std::endl;
-    std::cout << "Epsilon : " <<  epsilon << std::endl;           
+    std::cout << "Beta : " <<  epsilon << std::endl;           
 
 
     MPI_Finalize();    
