@@ -23,6 +23,8 @@ set(DISTRIBUTED_SUBGRAPH_MATCHING_FILE_LIST
         matchingcommand.cpp
         GeneratingFilterPlan.h
         GeneratingFilterPlan.cpp
+        GapMeasure.h
+        GapMeasure.cpp
         Enumeration.h
         Enumeration.cpp
         ParallelEnumeration.h

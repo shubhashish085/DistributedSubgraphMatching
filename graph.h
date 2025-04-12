@@ -18,8 +18,7 @@ private:
     ui max_label_frequency;
 
     ui* degrees;
-    ui* offsets;
-    VertexID * neighbors;
+    
     ui* matching_order_idx;
     LabelID* labels;
 
@@ -35,6 +34,10 @@ private:
     std::unordered_map<VertexID, ui> vtx_map_after_partition; 
 
 public:
+
+    ui* offsets;
+    VertexID * neighbors;
+
 
     Graph() {
 
@@ -79,6 +82,7 @@ public:
 
     //partition
     void loadGraphFromFileWithReindexing(const std::string& file_path);
+    long long measureGapForPartitionedEdges(const std::string& file_path);
 
 public:
 

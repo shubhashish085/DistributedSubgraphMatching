@@ -9,6 +9,7 @@
 #include "ParallelEnumeration.h"
 #include "LoadBalancer.h"
 #include "wtime.h"
+#include "GapMeasure.h"
 #include <chrono>
 #include <limits>
 #include <fstream>
@@ -304,11 +305,18 @@ void analyseAutomorphismBreak(Graph* query_graph, Graph* data_graph){
 void analyseHybridParallelization(Graph* query_graph, std::string data_graph_file){
 
 
-    int world_rank;
+    int world_rank, allocated_file_number;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 
-    std::string input_data_file = data_graph_file + "_" + std::to_string(world_rank);
+    if(world_rank == 0){
+        allocated_file_number = 0;
+    }else{
+        allocated_file_number = world_rank - 1;
+    }
+
+
+    std::string input_data_file = data_graph_file + "_" + std::to_string(allocated_file_number) + ".graph";
     Graph* data_graph = new Graph();
     data_graph->loadGraphFromFileWithReindexing(input_data_file);
     data_graph->printGraphMetaData();
@@ -333,12 +341,12 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 
     VertexID start_vertex = matching_order[0];
 
-    Automorphism::aggressive_optimize(ordered_pairs, adj_mat, query_graph->getVerticesCount());
-    Automorphism::restriction_integration_with_scheduling(matching_order, query_graph->getVerticesCount(), ordered_pairs, schedule_restriction_map); 
+    //Automorphism::aggressive_optimize(ordered_pairs, adj_mat, query_graph->getVerticesCount());
+    //Automorphism::restriction_integration_with_scheduling(matching_order, query_graph->getVerticesCount(), ordered_pairs, schedule_restriction_map); 
 
-    print_schedule_restriction_map(schedule_restriction_map, query_graph->getVerticesCount());  
+    //print_schedule_restriction_map(schedule_restriction_map, query_graph->getVerticesCount());  
 
-    size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
+    //size_t* est_work_array = LoadBalancer::workloadEstimator(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree);
 
     //Parallel Strategy
     double start_time, end_time;
@@ -348,7 +356,8 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
     call_count = 0;
 
     start_time = wtime();
-    ParallelEnumeration::exploreGraphWithAutomorphismBreak(data_graph, query_graph, candidates, candidates_count, matching_order, query_tree, est_work_array, output_limit, call_count, schedule_restriction_map);
+    ParallelEnumeration::exploreGraphInHybridFashion(data_graph, query_graph, candidates, candidates_count, matching_order,
+                                                        query_tree, output_limit, call_count, schedule_restriction_map);
 
     end_time = wtime();
 
@@ -388,8 +397,55 @@ void analyseHybridParallelization(Graph* query_graph, std::string data_graph_fil
 
 // }
 
-// Partition Run
 int main(int argc, char** argv) {
+
+    std::string prefix_file_name = "orkut";
+    std::string input_data_graph_directory = "/home/kars1/Research_Projects/metis/";
+    std::string input_data_graph_file = "/home/kars1/Parallel_computation/dataset/com-orkut.ungraph.txt";
+    
+
+    int numberOfParts[3] = {2, 4, 8};
+
+    
+    MPI_Init(NULL, NULL);
+
+    Graph* main_data_graph = new Graph();
+    main_data_graph->loadGraphFromFileWithoutStringConversion(input_data_graph_file);
+    main_data_graph->printGraphMetaData();
+
+
+    for(int i = 0; i < 3; i++){
+
+        long long gap_distance = 0;
+        double epsilon = 0;
+
+        for(int j = 0; j < numberOfParts[i]; j++){
+            std::string filename = input_data_graph_directory + std::to_string(numberOfParts[i]) + "_" + prefix_file_name + "_" +  std::to_string(j) + ".graph";
+            std::cout << " Data Graph : " << filename << std::endl;
+            Graph* data_graph = new Graph();
+            data_graph->loadGraphFromFileWithReindexing(filename);
+            data_graph->printGraphMetaData();
+
+            gap_distance += GapMeasure::measure_the_epsilon_gap(data_graph);
+        }
+
+        std::string filename = input_data_graph_directory + std::to_string(numberOfParts[i]) + "_" + prefix_file_name + "_partition" + ".graph";
+        std::cout << " Data Graph : " << filename << std::endl;
+        Graph* data_graph = new Graph();
+        gap_distance += data_graph->measureGapForPartitionedEdges(filename);
+        epsilon = (double)(1.0 * gap_distance) / (main_data_graph -> getEdgesCount());  
+
+        std::cout << "Graph : " << numberOfParts[i] << prefix_file_name << std::endl;
+        std::cout << "Epsilon : " <<  epsilon << std::endl;           
+
+    }
+
+    MPI_Finalize();    
+
+}
+
+// Partition Run
+/*int main(int argc, char** argv) {
 
     MatchingCommand command(argc, argv);
     std::string input_query_graph_file = command.getQueryGraphFilePath();
@@ -413,7 +469,7 @@ int main(int argc, char** argv) {
     double end_time = wtime();
     std::cout << "The time taken is : " << end_time - start_time << std::endl;
 
-}
+}*/
 
 //Final Run
 /*int main(int argc, char** argv) {

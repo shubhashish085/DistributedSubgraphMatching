@@ -1437,7 +1437,7 @@ EXIT:
 
 
 void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, const Graph *query_graph, ui **candidates, ui *candidates_count, ui *order,
-                                                       TreeNode *&tree, size_t* est_work_array, size_t thread_output_limit_num, size_t &call_count, 
+                                                       TreeNode *&tree,  size_t thread_output_limit_num, size_t &call_count, 
                                                        std::map<ui, std::vector<std::pair<ui, ui>>>& schedule_restriction_map){
 
     std::cout << " ################## Hybrid ##################" << std::endl;
@@ -1449,75 +1449,16 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
     MPI_Comm_size(MPI_COMM_WORLD, &world_process_cnt);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     
-    world_size = world_process_cnt - 1;
-    size_t *embedding_cnt_array = new size_t[world_size];
- 
-    
-    double *thread_wise_time = new double[world_size];
-
-    for (ui i = 0; i < world_size; i++)
-    {
-        embedding_cnt_array[i] = 0;
-    }
-
-    int max_depth = query_graph->getVerticesCount();
-    ui max_candidate_count = data_graph->getGraphMaxLabelFrequency();
-
-    VertexID start_vertex = order[0];
-
-    VertexID **valid_candidate = new ui *[max_depth];
-
-    for (ui i = 0; i < max_depth; ++i){
-        valid_candidate[i] = new VertexID[max_candidate_count];
-    }
-
-    ui *candidate_track = new ui[data_graph->getVerticesCount()];
-    ui *candidate_offset = new ui[data_graph->getVerticesCount() + 1];
-    ui candidate_csr_count = 0;
-
-    //std::fill(candidate_track, candidate_track + data_graph->getVerticesCount(), 0);
-
-    for (ui i = 0; i < query_graph->getVerticesCount(); i++)
-    {
-        candidate_csr_count += candidates_count[i];
-    }
-
-    ui *candidate_csr = new ui[candidate_csr_count];
-
-    for (ui i = 0; i < query_graph->getVerticesCount(); i++)
-    {
-        for (ui j = 0; j < candidates_count[i]; j++)
-        {
-            VertexID data_vertex = candidates[i][j];
-            candidate_track[data_vertex]++;
-        }
-    }
-
-    candidate_offset[0] = 0;
-
-    for (ui i = 1; i < data_graph->getVerticesCount() + 1; i++)
-    {
-        candidate_offset[i] = candidate_offset[i - 1] + candidate_track[i - 1];
-    }
-
-    std::fill(candidate_track, candidate_track + data_graph->getVerticesCount(), 0);
-
-    for (ui i = 0; i < query_graph->getVerticesCount(); i++)
-    {
-        for (ui j = 0; j < candidates_count[i]; j++)
-        {
-            VertexID data_vertex = candidates[i][j];
-            candidate_csr[candidate_offset[data_vertex] + candidate_track[data_vertex]] = i;
-            candidate_track[data_vertex]++;
-        }
-    }
-
-    for (ui i = 0; i < data_graph->getVerticesCount(); ++i)
-    {
-        std::sort(candidate_csr + candidate_offset[i], candidate_csr + candidate_offset[i + 1]); // sorting the query graph parent of every vertex
-    }
+    world_size = world_process_cnt - 1; 
 
     if (world_rank == 0){
+
+        size_t *embedding_cnt_array = new size_t[world_size];
+
+        for (ui i = 0; i < world_size; i++)
+        {
+            embedding_cnt_array[i] = 0;
+        }
         
         ui rank;
 
@@ -1529,6 +1470,7 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
             MPI_Recv(&process_embedding_count, 1, MPI_UNSIGNED, MPI_ANY_SOURCE, WORKTAG, MPI_COMM_WORLD, &status);
 
             rank = status.MPI_SOURCE;
+            std::cout << "Embedding count from " << rank << " : " << process_embedding_count << std::endl;
             embedding_cnt_array[rank] = process_embedding_count;
 
             //std::cout << "Received in Process : 0 from Process : " << rank << " task : " << assigned_task[rank] << std::endl;
@@ -1536,12 +1478,69 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
         }
 
         size_t final_embedding_count = 0;
-        for (ui i = 0; i < world_size; i++){
+        for (ui i = 1; i < world_process_cnt; i++){
             final_embedding_count += embedding_cnt_array[i];
         }
 
         std::cout << "Total Embedding Count : " << final_embedding_count << std::endl;
+
     }else{
+
+        int max_depth = query_graph->getVerticesCount();
+        ui max_candidate_count = data_graph->getGraphMaxLabelFrequency();
+
+        VertexID start_vertex = order[0];
+
+        VertexID **valid_candidate = new ui *[max_depth];
+
+        for (ui i = 0; i < max_depth; ++i){
+            valid_candidate[i] = new VertexID[max_candidate_count];
+        }
+
+        ui *candidate_track = new ui[data_graph->getVerticesCount()];
+        ui *candidate_offset = new ui[data_graph->getVerticesCount() + 1];
+        ui candidate_csr_count = 0;
+
+        //std::fill(candidate_track, candidate_track + data_graph->getVerticesCount(), 0);
+
+        for (ui i = 0; i < query_graph->getVerticesCount(); i++)
+        {
+            candidate_csr_count += candidates_count[i];
+        }
+
+        ui *candidate_csr = new ui[candidate_csr_count];
+
+        for (ui i = 0; i < query_graph->getVerticesCount(); i++)
+        {
+            for (ui j = 0; j < candidates_count[i]; j++)
+            {
+                VertexID data_vertex = candidates[i][j];
+                candidate_track[data_vertex]++;
+            }
+        }
+
+        candidate_offset[0] = 0;
+
+        for (ui i = 1; i < data_graph->getVerticesCount() + 1; i++)
+        {
+            candidate_offset[i] = candidate_offset[i - 1] + candidate_track[i - 1];
+        }
+
+        std::fill(candidate_track, candidate_track + data_graph->getVerticesCount(), 0);
+
+        for (ui i = 0; i < query_graph->getVerticesCount(); i++)
+        {
+            for (ui j = 0; j < candidates_count[i]; j++)
+            {
+                VertexID data_vertex = candidates[i][j];
+                candidate_csr[candidate_offset[data_vertex] + candidate_track[data_vertex]] = i;
+                candidate_track[data_vertex]++;
+            }
+        }
+
+        for (ui i = 0; i < data_graph->getVerticesCount(); ++i){
+            std::sort(candidate_csr + candidate_offset[i], candidate_csr + candidate_offset[i + 1]); // sorting the query graph parent of every vertex
+        }
 
         MPI_Status status;
 
@@ -1550,6 +1549,13 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
         ui process_embedding_count = 0, thread_count = 8;
 
         omp_set_num_threads(thread_count);
+
+        size_t* thread_embedding_cnt = new size_t[thread_count];
+        double *thread_wise_time = new double[thread_count];
+
+        for(ui i = 0; i < thread_count; i++){
+            thread_embedding_cnt[i] = 0;
+        }        
 
         #pragma omp parallel
         {
@@ -1596,7 +1602,7 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
                         idx[cur_depth] += 1;
 
                         if (cur_depth == max_depth - 1) {
-                            embedding_cnt_array[th_id] += 1;
+                            thread_embedding_cnt[th_id] += 1;
                             visited_vertices[v] = false;
                             //Enumerate::printMatch(embedding, query_graph->getVerticesCount());
                             
@@ -1636,7 +1642,7 @@ void ParallelEnumeration::exploreGraphInHybridFashion(const Graph *data_graph, c
         }
 
         for(ui i = 0; i < thread_count; i++){
-            process_embedding_count += embedding_cnt_array[i];
+            process_embedding_count += thread_embedding_cnt[i];
         }
 
         MPI_Send(&process_embedding_count, 1, MPI_UNSIGNED, 0, WORKTAG, MPI_COMM_WORLD);       
